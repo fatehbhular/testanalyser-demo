@@ -1,0 +1,41 @@
+name: JUnit ingestion proof of concept
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Verify parser
+        run: python -m pytest tests/ -v
+
+      - name: Generate demonstration report
+        run: python -m pytest examples/ -v --junitxml=reports/results.xml
+
+      - name: Upload demonstration report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-report
+          path: reports/results.xml
+          if-no-files-found: error
+          retention-days: 14
